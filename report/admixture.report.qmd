@@ -3,8 +3,11 @@ title: NBIS Support project
 subtitle: Admixture analysis
 author: Verena Kutschera
 date: today
-format:
+format: 
     nbis-html: default
+    # pdf:
+    #     documentclass: report
+    #     highlight-style: github
 engine: jupyter
 jupyter: python3
 bibliography: references.bib
@@ -15,9 +18,8 @@ bibliography: references.bib
 Admixture analysis of 57 individuals sampled in 1980, as 
 part of a larger monitoring project. 
 
-## Data
-
 ```{python cluster-tbl}
+#| echo: False
 #| label: tbl-clusters
 #| tbl-cap: Clusters and sample sizes after removal of low-quality samples, total number of sequenced individuals shown in brackets. 
 
@@ -34,6 +36,11 @@ Markdown(tabulate(
     headers=["Cluster","number of samples"]
 ))
 ```
+
+## Code availability
+
+The ADMIXTURE Snakemake pipeline and all files to produce this 
+Quarto report are available on <https://github.com/verku/admixture>.
 
 ## Methods
 
@@ -88,7 +95,7 @@ sex-linked scaffolds.
 
 A Snakemake pipeline was written to run ADMIXTURE v1.3.0 [@Alexander2009] 
 to estimate individual-based ancestry and identify genetic clusters 
-(https://github.com/verku/admixture). This maximum likelihood approach 
+(<https://github.com/verku/admixture/>). This maximum likelihood approach 
 uses a cross-validation procedure to determine the best number of 
 possible genetic groups present in the dataset, under the assumption 
 that individuals are unrelated. ADMIXTURE was run for *K*=1-4. 
@@ -117,6 +124,7 @@ The hybrid zone cluster becomes fully apparent and some
 Southern cluster samples appear admixed for *K*=4 (@fig-admx). 
 
 ```{python K-plot}
+#| echo: false
 #| label: fig-k
 #| fig-cap: "Cross-validation plot to determine the best-fitting number of K from an ADMIXTURE analysis of 56 genomes."
 
@@ -129,11 +137,10 @@ def k_plot(log_files):
 
     for file in log_files:
         K=str(file).split(".")[-2]
-        with open(file, 'r') as f:  # Open file for read
-            for line in f:           # Read line-by-line
-                # Process the line
+        with open(file, 'r') as f:
+            for line in f:
                 if line.startswith("CV error (K="):
-                    line=line.strip().split(": ")  # Strip the leading/trailing whitespaces and newline
+                    line=line.strip().split(": ")
                     cv_error=float(line[1])
                     cv_dict[int(K)] = cv_error
 
@@ -149,10 +156,14 @@ def k_plot(log_files):
 
     plt.show()
 
-k_plot(["results/reference.modern.merged.biallelic.fmissing0.0.autos.1980.1.log", "results/reference.modern.merged.biallelic.fmissing0.0.autos.1980.2.log", "results/reference.modern.merged.biallelic.fmissing0.0.autos.1980.3.log", "results/reference.modern.merged.biallelic.fmissing0.0.autos.1980.4.log"])
-```
+k_plot(["results/reference.modern.merged.biallelic.fmissing0.0.autos.1980.1.log", 
+"results/reference.modern.merged.biallelic.fmissing0.0.autos.1980.2.log", 
+"results/reference.modern.merged.biallelic.fmissing0.0.autos.1980.3.log", 
+"results/reference.modern.merged.biallelic.fmissing0.0.autos.1980.4.log"])
+``` 
 
 ```{python admixture-plot}
+#| echo: false
 #| label: fig-admx
 #| fig-cap: Admixture plot for 56 genomes sampled from four clusters.
 #| fig-subcap: 
@@ -186,7 +197,8 @@ def admixture_plot(q_file, ind_file, metadata, K):
         "hybridzone": "Hybridzone",
         "northern": "Northern"
     })
-    merged_df["population"] = pd.Categorical(merged_df["population"], categories=pop_order, ordered=True)
+    merged_df["population"] = pd.Categorical(merged_df["population"], 
+    categories=pop_order, ordered=True)
     sorted_pop_df = merged_df.sort_values(by=["population", "year", "samplename"])
 
     # Extract ancestry proportions and relevant metadata
@@ -203,7 +215,8 @@ def admixture_plot(q_file, ind_file, metadata, K):
     bar_width = 1.0  # full width, no space between bars
     bottom = np.zeros(len(samples))
     for i in range(K):
-        ax.bar(np.arange(len(samples)), ancestry_data[i], width=bar_width, bottom=bottom, color=colors[i], edgecolor='none', label=f'Cluster {i+1}')
+        ax.bar(np.arange(len(samples)), ancestry_data[i], width=bar_width, 
+        bottom=bottom, color=colors[i], edgecolor='none', label=f'Cluster {i+1}')
         bottom += ancestry_data[i]
 
     # Create x-axis labels with population and year
@@ -237,17 +250,17 @@ def admixture_plot(q_file, ind_file, metadata, K):
     plt.tight_layout()
     plt.show()
 
-K2=admixture_plot("results/reference.modern.merged.biallelic.fmissing0.0.autos.1980.2.Q", "results/ind_order_vcf.1980.txt", "2025_metadata.csv", 2)
+K2=admixture_plot("results/reference.modern.merged.biallelic.fmissing0.0.autos.1980.2.Q", 
+"results/ind_order_vcf.1980.txt", "2025_metadata.csv", 2)
 
-K3=admixture_plot("results/reference.modern.merged.biallelic.fmissing0.0.autos.1980.3.Q", "results/ind_order_vcf.1980.txt", "2025_metadata.csv", 3)
+K3=admixture_plot("results/reference.modern.merged.biallelic.fmissing0.0.autos.1980.3.Q", 
+"results/ind_order_vcf.1980.txt", "2025_metadata.csv", 3)
 
-K4=admixture_plot("results/reference.modern.merged.biallelic.fmissing0.0.autos.1980.4.Q", "results/ind_order_vcf.1980.txt", "2025_metadata.csv", 4)
+K4=admixture_plot("results/reference.modern.merged.biallelic.fmissing0.0.autos.1980.4.Q", 
+"results/ind_order_vcf.1980.txt", "2025_metadata.csv", 4)
 ```
 
-## Code availability
-
-The Snakemake pipeline and this Quarto report are available 
-on GitHub: https://github.com/verku/admixture
+\newpage
 
 ## References
 
