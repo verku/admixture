@@ -4,10 +4,10 @@ subtitle: Admixture analysis
 author: Verena Kutschera
 date: today
 format: 
-    nbis-html: default
-    # pdf:
-    #     documentclass: report
-    #     highlight-style: github
+    # nbis-html: default
+    pdf:
+        documentclass: report
+        highlight-style: github
 engine: jupyter
 jupyter: python3
 bibliography: references.bib
