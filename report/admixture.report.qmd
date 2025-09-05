@@ -1,0 +1,249 @@
+---
+title: NBIS Support project
+subtitle: Admixture analysis
+author: Verena Kutschera
+date: today
+format:
+    nbis-html: default
+engine: jupyter
+jupyter: python3
+bibliography: references.bib
+---
+
+## Background
+
+Admixture analysis of 57 individuals sampled in 1980, as 
+part of a larger monitoring project. 
+
+## Data
+
+```{python cluster-tbl}
+#| label: tbl-clusters
+#| tbl-cap: Clusters and sample sizes after removal of low-quality samples, total number of sequenced individuals shown in brackets. 
+
+from IPython.display import Markdown
+from tabulate import tabulate
+
+table_clusters = [["Island","7"],
+        ["Southern","29 (30)"],
+        ["Northern","15"],
+        ["Hybridzone","5"]]
+
+Markdown(tabulate(
+    table_clusters, 
+    headers=["Cluster","number of samples"]
+))
+```
+
+## Methods
+
+### Data processing and analysis
+
+#### Reference genome assembly preparations
+
+A Hi-C scaffolded de-novo assembly of the studied species was 
+used as reference genome for this analysis. Sex chromosome-linked 
+scaffolds were excluded from all analyses. 
+
+Repetitive regions were de novo identified and masked using 
+RepeatModeler [@Smit2008] and RepeatMasker [@Smit2013] and CpG 
+sites were identified in each of the reference genomes 
+using GenErode v0.6.0 [@Kutschera2022].
+
+#### Whole-genome sequencing data processing
+
+Whole-genome sequencing data from 57 samples were processed and 
+analysed using GenErode [@Kutschera2022] (<https://github.com/NBISweden/GenErode>) 
+with default settings if not otherwise described. GenErode version 
+0.6.0 was used for mapping and BAM file processing, and version 
+0.7.0 (available on git branch 'dev' at the time of writing this 
+report) for data processing and analysis of processed BAM files. 
+Further downstream analyses were performed in a newly developed 
+Snakemake pipeline for admixture analyses and in this Quarto document. 
+
+Briefly, sequencing reads were adapter- and quality-trimmed 
+with fastp v0.22.0 [@Chen2018] and then mapped to each of the 
+reference genomes with BWA mem v0.7.17 [@Li2009BWA]. PCR duplicates 
+were identified and marked using Picard MarkDuplicates v2.26.6 
+(<https://gatk.broadinstitute.org/hc/en-us/articles/360037225972-MarkDuplicates-Picard->) 
+and reads around indels were realigned with GATK IndelRealigner 
+v3.7 [@McKenna2010]. The genome-wide mean depth and minimum and 
+maximum depth thresholds for downstream analyses were calculated 
+in GenErode with default settings. 
+
+Basic FastQ and bam file statistics were obtained with FastQC 
+v0.12.1 (<https://www.bioinformatics.babraham.ac.uk/projects/fastqc/>), 
+samtools v1.9 [@Li2009SAM], QualiMap v2.2.2 [@Okonechnikov2015] 
+and summarized using MultiQC v1.9 [@Ewels2016]. 
+
+Variants were called in each sample using bcftools v1.20 
+[@Danecek2021] mpileup and call. CpG sites as identified from 
+the reference genomes were removed and default GenErode filters 
+were applied to the VCF files. Finally, VCF files from all 
+samples were merged and sites that are not biallelic as well 
+as sites with any missing genotypes were removed along with 
+sex-linked scaffolds. 
+
+### Population structure
+
+ADMIXTURE v1.3.0 [@Alexander2009] was run to estimate individual- 
+based ancestry and identify genetic clusters (*K*=1–4). This maximum 
+likelihood approach uses a cross-validation procedure to determine 
+the best number of possible genetic groups present in the dataset, 
+under the assumption that individuals are unrelated.
+
+## Results
+
+### Data processing
+
+We mapped 57 re-sequenced genomes to the reference genome, 
+resulting in mean genome-wide depths of coverage ranging from 
+5X to 30X (mean across all samples: 17X). One sample was 
+excluded from further analysis due to low sequencing depth. 
+After merging the remaining 56 VCF files, SNPs were filtered 
+to keep only biallelic SNPs, and to exclude sex chromosome-linked 
+scaffolds and sites with missing data, resulting in a final 
+set of 483,494 SNPs. 
+
+### Population structure
+
+Admixture was run for *K*=1-4. The highest support was obtained for 
+*K*=2 (@fig-k). For *K*=2, a Northern cluster is distinguishable 
+from a Southern cluster and the island samples, and individuals 
+from the hybrid zone appear admixed (@fig-admx). 
+For *K*=3, the Northern cluster appears substructured. 
+The hybrid zone cluster becomes fully apparent and some 
+Southern cluster samples appear admixed for *K*=4 (@fig-admx). 
+
+```{python K-plot}
+#| label: fig-k
+#| fig-cap: "Cross-validation plot to determine the best-fitting number of K from an ADMIXTURE analysis of 56 genomes."
+
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+def k_plot(log_files):
+    cv_dict={}
+
+    for file in log_files:
+        K=str(file).split(".")[-2]
+        with open(file, 'r') as f:  # Open file for read
+            for line in f:           # Read line-by-line
+                # Process the line
+                if line.startswith("CV error (K="):
+                    line=line.strip().split(": ")  # Strip the leading/trailing whitespaces and newline
+                    cv_error=float(line[1])
+                    cv_dict[int(K)] = cv_error
+
+    # Convert the dictionary to a DataFrame with K as a column
+    cv_df = pd.DataFrame(sorted(cv_dict.items()), columns=['K', 'cv_error'])
+
+    sns.set(style='ticks', palette='Dark2')
+    plt.figure(figsize=(4, 3))
+    g = sns.lineplot(data=cv_df, x='K', y='cv_error')
+    g.set_xlabel("K")
+    g.set_ylabel("cross-validation error")
+    g.set_xticks(range(1, int(K)+1))
+
+    plt.show()
+
+k_plot(["results/reference.modern.merged.biallelic.fmissing0.0.autos.1980.1.log", "results/reference.modern.merged.biallelic.fmissing0.0.autos.1980.2.log", "results/reference.modern.merged.biallelic.fmissing0.0.autos.1980.3.log", "results/reference.modern.merged.biallelic.fmissing0.0.autos.1980.4.log"])
+```
+
+```{python admixture-plot}
+#| label: fig-admx
+#| fig-cap: Admixture plot for 56 genomes sampled from four clusters.
+#| fig-subcap: 
+#|   - K=2
+#|   - K=3
+#|   - K=4
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+def admixture_plot(q_file, ind_file, metadata, K):
+    # Read the Q matrix (assuming whitespace-delimited, no header)
+    # Set header to numbers from 1 to number of K
+    q_df = pd.read_csv(q_file, sep='\\s+', header=None)
+    q_df.columns = [str(i+1) for i in range(K)]
+    # Add a column with individual ordering from in_file
+    ind_df = pd.read_csv(ind_file, header=None, names=["samplename"])
+    # Join df and ind_df
+    joined_df = q_df.join(ind_df)
+    # Merge with metadata
+    metadata_df = pd.read_csv(metadata)
+    # merge hom_df and metadata_df
+    merged_df = pd.merge(joined_df, metadata_df, on='samplename')
+    # Sort by population
+    pop_order = ["Island", "Southern", "Hybridzone", "Northern"]
+    merged_df["population"] = merged_df["population"].replace({
+        "island": "Island",
+        "southern": "Southern",
+        "hybridzone": "Hybridzone",
+        "northern": "Northern"
+    })
+    merged_df["population"] = pd.Categorical(merged_df["population"], categories=pop_order, ordered=True)
+    sorted_pop_df = merged_df.sort_values(by=["population", "year", "samplename"])
+
+    # Extract ancestry proportions and relevant metadata
+    ancestry_cols = [str(i+1) for i in range(K)]
+    ancestry_data = sorted_pop_df[ancestry_cols].to_numpy().T
+    samples = sorted_pop_df["samplename"].tolist()
+    populations = sorted_pop_df["population"].tolist()
+
+    # Set up colors (based on number of columns = clusters from *.Q file)
+    colors = sns.color_palette('Dark2', n_colors=K)
+
+    # Plot stacked barplot
+    fig, ax = plt.subplots(figsize=(max(6, len(samples) // 11), 3))
+    bar_width = 1.0  # full width, no space between bars
+    bottom = np.zeros(len(samples))
+    for i in range(K):
+        ax.bar(np.arange(len(samples)), ancestry_data[i], width=bar_width, bottom=bottom, color=colors[i], edgecolor='none', label=f'Cluster {i+1}')
+        bottom += ancestry_data[i]
+
+    # Create x-axis labels with population and year
+    ax.set_ylabel("Ancestry", fontsize=10)
+    ax.set_ylim(0,1.0)
+    ax.tick_params(axis='y', labelsize=9)
+    ax.set_xlim(-0.5, len(samples) - 0.5)
+    ax.set_xticks([])
+    ax.set_xticklabels([])
+
+    # Add population/year labels below the x-axis
+    # Find the boundaries where population/year changes
+    pop_labels = [f"{pop}" for pop in populations]
+    boundaries = [0]
+    last_label = pop_labels[0]
+    for i, label in enumerate(pop_labels):
+        if label != last_label:
+            boundaries.append(i)
+            last_label = label
+    boundaries.append(len(samples))
+
+    # Place population/year labels at the center of each group
+    for i in range(len(boundaries) - 1):
+        start = boundaries[i]
+        end = boundaries[i + 1]
+        label = pop_labels[start]
+        ax.text((start + end - 1) / 2, -0.05, label, ha='center', va='top', fontsize=9, rotation=0, transform=ax.get_xaxis_transform())
+        # Add a vertical line at each boundary except the first (0) and last (len(samples))
+        if i > 0:
+            ax.axvline(x=start - 0.5, color='black', linewidth=1.0, alpha=0.7)
+    plt.tight_layout()
+    plt.show()
+
+K2=admixture_plot("results/reference.modern.merged.biallelic.fmissing0.0.autos.1980.2.Q", "results/ind_order_vcf.1980.txt", "2025_metadata.csv", 2)
+
+K3=admixture_plot("results/reference.modern.merged.biallelic.fmissing0.0.autos.1980.3.Q", "results/ind_order_vcf.1980.txt", "2025_metadata.csv", 3)
+
+K4=admixture_plot("results/reference.modern.merged.biallelic.fmissing0.0.autos.1980.4.Q", "results/ind_order_vcf.1980.txt", "2025_metadata.csv", 4)
+```
+
+## References
+
+::: {#refs}
+:::
