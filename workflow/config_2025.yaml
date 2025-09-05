@@ -1,0 +1,26 @@
+#################################################################
+#################################################################
+# Configuration settings for the admixture pipeline v0.0.1      #
+#################################################################
+#################################################################
+
+# 1) Full path to quality-filtered VCF file that is used as input 
+# for the pipeline. 
+# An index file (*.csi) has to be present in the same location.
+vcf_path: "/cfs/klemming/projects/supr/snicXXXX-X-XXX/NBIS/GenErode/results/modern/vcf/reference.modern.merged.biallelic.fmissing0.0.autos.vcf.gz"
+
+# 2) Metadata file in CSV format with IDs and sampling year of
+# samples included in the VCF file.
+metadata: "2025_metadata.csv"
+
+# 3) Full path to an output directory for the pipeline results
+out_dir: "/cfs/klemming/projects/supr/snicXXXX-X-XXX/NBIS/SMS-XXXX-XX/admixture/results"
+
+# 4) Descriptive name for the dataset being analyzed, to be used 
+# in the output file names
+dataset: "reference.modern.merged.biallelic.fmissing0.0.autos"
+
+# 5) ADMIXTURE
+# Provide a list of values for K (number of populations) to be tested, 
+# based on prior knowledge about the study organism.
+K_values: [1,2,3,4] # e.g., [1,2,3,4,5]

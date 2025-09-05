@@ -1,0 +1,29 @@
+# Configuration file for slurm plugin (Snakemake >8.0.0) for Dardel cluster at PDC/KTH
+# snakemake CLI flags
+executor: slurm
+jobs: 100
+cores: 1
+printshellcmds: true
+software-deployment-method: apptainer
+use-apptainer: True
+apptainer-args: "-B /cfs/klemming"
+
+# slurm resources
+## default-resources: applied to all jobs, overruled by resources defined below for jobs
+default-resources: 
+  slurm_account: naissXXXX-X-XXX # enter your compute project here
+  slurm_partition: shared # use Dardel’s shared partition
+  nodes: 1 # one node on Dardel from the shared partition
+  ntasks: 1 # number of concurrent tasks / ranks
+  threads: 20 # number of threads, corresponding to cpus-per-task or cores (adjust per rule under set-threads)
+  runtime: 120 # default runtime in minutes (adjust per rule under set-resources)
+  tmpdir: "'/cfs/klemming/scratch/u/user'" # change to your user's allocated temporary directory: /cfs/klemming/scratch/first-letter-of-username/username
+
+set-threads: # map rule names to threads
+  - extract_samples=20
+  - vcf2plink12=40
+  - admixture=20
+set-resources: # map rule names to resources in general
+  - extract_samples:mem_mb=40000
+  - admixture:mem_mb=40000
+  - admixture:runtime=1440

@@ -1,0 +1,131 @@
+##############################################################
+######################### admixture ##########################
+# Snakemake pipeline to run ADMIXTURE on a VCF file          #
+##############################################################
+
+##############################################################
+################ WORKFLOW VARIABLES AND CODE #################
+##############################################################
+
+from snakemake.exceptions import WorkflowError
+from snakemake.utils import min_version
+from snakemake.utils import validate
+import os
+import pandas as pd
+
+min_version("8.0.0")
+admixture_version = "0.0.1"
+configfile: "config.yaml"
+
+# Create a dataframe with sampling time and corresponding sample list from metadata file
+sample_df = pd.read_csv(config["metadata"])  # read in the metadata as dataframe
+grouped = sample_df.sort_values("population").groupby("year")  # sort by population, then group by year
+year_samples_df = grouped["samplename"].apply(list).reset_index().rename(columns={"samplename": "samples"}).set_index("year")  # create a new dataframe with year as index and sample names as list
+
+## Variables for software containers for easier version updating
+bcftools_container = "https://depot.galaxyproject.org/singularity/bcftools:1.20--h8b25389_0"
+plink_container = "https://depot.galaxyproject.org/singularity/plink:1.90b6.12--heea4ae3_0"
+admixture_container = "https://depot.galaxyproject.org/singularity/admixture:1.3.0--0"
+
+############################################################
+#################### WORKFLOW RULES ########################
+############################################################
+
+rule all:
+    input:
+        admixture=expand(config["out_dir"] + "/{dataset}.{year}.{K}.{ext}", dataset=config["dataset"], year=year_samples_df.index, K=config["K_values"], ext=["Q", "P"]),
+
+rule samples_file:
+    input:
+        metadata=config["metadata"],
+    output:
+        samples=config["out_dir"] + "/{dataset}.{year}.txt",
+    log:
+        os.path.abspath("logs/rule_logs/samples_file/{dataset}.{year}.txt.log"),
+    run:
+        year = wildcards.year
+        with open(output.samples, "w") as f:
+            for sample in year_samples_df.loc[year, "samples"]:
+                f.write(sample + "\n")
+
+rule extract_samples:
+    """
+    Extract individuals sampled in a specific year from the input VCF file
+    """
+    input:
+        vcf=config["vcf_path"],
+        index=config["vcf_path"] + ".csi",
+        samples=config["out_dir"] + "/{dataset}.{year}.txt",
+    output:
+        vcf=config["out_dir"] + "/{dataset}.{year}.vcf.gz",
+    log:
+        os.path.abspath("logs/rule_logs/extract_samples/{dataset}.{year}.extract_samples.log"),
+    singularity:
+        bcftools_container
+    threads: 20
+    shell:
+        """
+        samples_edited=$(cat {input.samples} | tr "\\n" "," | head -c-1)
+        bcftools view --threads {threads} -Oz -s $samples_edited -o {output.vcf} {input.vcf} 2> {log}
+        """
+
+rule index_vcf:
+    """
+    Index sample VCF file
+    """
+    input:
+        vcf=config["out_dir"] + "/{dataset}.{year}.vcf.gz",
+    output:
+        index=config["out_dir"] + "/{dataset}.{year}.vcf.gz.csi",
+    log:
+        os.path.abspath("logs/rule_logs/index_vcf/{dataset}.{year}.index_vcf.log"),
+    singularity:
+        bcftools_container
+    shell:
+        """
+        bcftools index -f {input.vcf} 2> {log}
+        """
+
+rule vcf2plink12:
+    """
+    Convert the merged and filtered VCF file to plink format with --recode12 for ADMIXTURE
+    """
+    input:
+        vcf=config["out_dir"] + "/{dataset}.{year}.vcf.gz",
+        index=config["out_dir"] + "/{dataset}.{year}.vcf.gz.csi",
+    output:
+        map=config["out_dir"] + "/{dataset}.{year}.map",
+        ped=config["out_dir"] + "/{dataset}.{year}.ped",
+    log:
+        os.path.abspath("logs/rule_logs/vcf2plink12/{dataset}.{year}.log"),
+    singularity:
+        plink_container
+    params:
+        out=config["out_dir"] + "/{dataset}.{year}",
+    shell:
+        """
+        plink --vcf {input.vcf} --recode12 --geno 0 --allow-extra-chr --out {params.out} 2> {log}
+        """
+
+rule admixture:
+    """
+    Run ADMIXTURE for different values of K without bootstrapping
+    """
+    input:
+        map=config["out_dir"] + "/{dataset}.{year}.map",
+        ped=config["out_dir"] + "/{dataset}.{year}.ped",
+    output:
+        q=config["out_dir"] + "/{dataset}.{year}.{K}.Q",
+        p=config["out_dir"] + "/{dataset}.{year}.{K}.P",
+    log:
+        os.path.abspath("logs/rule_logs/admixture/{dataset}.{year}.{K}.log"),
+    singularity:
+        admixture_container
+    threads: 20
+    params:
+        out_dir=config["out_dir"],
+    shell:
+        """
+        cd {params.out_dir} # ADMIXTURE writes the output to the current directory
+        admixture -s 12345 --cv {input.ped} {wildcards.K}  -j{threads} | tee {log}
+        """
