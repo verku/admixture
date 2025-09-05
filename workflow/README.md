@@ -22,7 +22,7 @@ following line:
   slurm_account: XXX-XX-XXX # update this to your slurm account
 ```
 
-- Edit the configuration file `admixture/workflowconfig.yaml` 
+- Edit the configuration file `admixture/workflow/config.yaml` 
 to provide paths to the input data and output file locations 
 as well as the numbers of K to be tested.
 
