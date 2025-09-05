@@ -3122,6 +3122,7 @@ vertical-align: -.125em;
   <li><a href="#data-processing" id="toc-data-processing" class="nav-link" data-scroll-target="#data-processing">Data processing</a></li>
   <li><a href="#population-structure-1" id="toc-population-structure-1" class="nav-link" data-scroll-target="#population-structure-1">Population structure</a></li>
   </ul></li>
+  <li><a href="#code-availability" id="toc-code-availability" class="nav-link" data-scroll-target="#code-availability">Code availability</a></li>
   <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
   </ul>
 </nav>
@@ -3190,7 +3191,7 @@ vertical-align: -.125em;
 Table 1: Clusters and sample sizes after removal of low-quality samples, total number of sequenced individuals shown in brackets.
 </figcaption>
 <div aria-describedby="tbl-clusters-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="4">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="1">
 <table class="do-not-create-environment cell caption-top table table-sm table-striped small">
 <thead>
 <tr class="header">
@@ -3242,7 +3243,7 @@ Table 1: Clusters and sample sizes after removal of low-quality samples, total 
 </section>
 <section id="population-structure" class="level3">
 <h3 class="anchored" data-anchor-id="population-structure">Population structure</h3>
-<p>ADMIXTURE v1.3.0 <span class="citation" data-cites="Alexander2009">(<a href="#ref-Alexander2009" role="doc-biblioref">Alexander, Novembre, and Lange 2009</a>)</span> was run to estimate individual- based ancestry and identify genetic clusters (<em>K</em>=1–4). This maximum likelihood approach uses a cross-validation procedure to determine the best number of possible genetic groups present in the dataset, under the assumption that individuals are unrelated.</p>
+<p>A Snakemake pipeline was written to run ADMIXTURE v1.3.0 <span class="citation" data-cites="Alexander2009">(<a href="#ref-Alexander2009" role="doc-biblioref">Alexander, Novembre, and Lange 2009</a>)</span> to estimate individual-based ancestry and identify genetic clusters (https://github.com/verku/admixture). This maximum likelihood approach uses a cross-validation procedure to determine the best number of possible genetic groups present in the dataset, under the assumption that individuals are unrelated. ADMIXTURE was run for <em>K</em>=1-4.</p>
 </section>
 </section>
 <section id="results" class="level2">
@@ -3434,6 +3435,10 @@ Figure 2: Admixture plot for 56 genomes sampled from four clusters.
 </div>
 </div>
 </section>
+</section>
+<section id="code-availability" class="level2">
+<h2 class="anchored" data-anchor-id="code-availability">Code availability</h2>
+<p>The Snakemake pipeline and this Quarto report are available on GitHub: https://github.com/verku/admixture</p>
 </section>
 <section id="references" class="level2">
 <h2 class="anchored" data-anchor-id="references">References</h2>

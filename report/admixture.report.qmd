@@ -86,11 +86,12 @@ sex-linked scaffolds.
 
 ### Population structure
 
-ADMIXTURE v1.3.0 [@Alexander2009] was run to estimate individual- 
-based ancestry and identify genetic clusters (*K*=1–4). This maximum 
-likelihood approach uses a cross-validation procedure to determine 
-the best number of possible genetic groups present in the dataset, 
-under the assumption that individuals are unrelated.
+A Snakemake pipeline was written to run ADMIXTURE v1.3.0 [@Alexander2009] 
+to estimate individual-based ancestry and identify genetic clusters 
+(https://github.com/verku/admixture). This maximum likelihood approach 
+uses a cross-validation procedure to determine the best number of 
+possible genetic groups present in the dataset, under the assumption 
+that individuals are unrelated. ADMIXTURE was run for *K*=1-4. 
 
 ## Results
 
@@ -242,6 +243,11 @@ K3=admixture_plot("results/reference.modern.merged.biallelic.fmissing0.0.autos.1
 
 K4=admixture_plot("results/reference.modern.merged.biallelic.fmissing0.0.autos.1980.4.Q", "results/ind_order_vcf.1980.txt", "2025_metadata.csv", 4)
 ```
+
+## Code availability
+
+The Snakemake pipeline and this Quarto report are available 
+on GitHub: https://github.com/verku/admixture
 
 ## References
 
