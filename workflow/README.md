@@ -75,5 +75,5 @@ placed in the folder `logs` in respective subfolders.
 
 An example for further data analysis can be found in 
 the NBIS project report `admixture/report/admixture.report.qmd`,
-a rendered version is available in HTML format 
-(`admixture/report/admixture.report.html`). 
+a rendered version is available in PDF format 
+(`admixture/report/admixture.report.pdf`). 
