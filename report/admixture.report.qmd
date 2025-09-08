@@ -4,7 +4,6 @@ subtitle: Admixture analysis
 author: Verena Kutschera
 date: today
 format: 
-    # nbis-html: default
     pdf:
         documentclass: report
         highlight-style: github
@@ -104,7 +103,7 @@ that individuals are unrelated. ADMIXTURE was run for *K*=1-4.
 
 ### Data processing
 
-We mapped 57 re-sequenced genomes to the reference genome, 
+I mapped 57 re-sequenced genomes to the reference genome, 
 resulting in mean genome-wide depths of coverage ranging from 
 5X to 30X (mean across all samples: 17X). One sample was 
 excluded from further analysis due to low sequencing depth. 
